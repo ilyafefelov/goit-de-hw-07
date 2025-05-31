@@ -20,12 +20,12 @@ default_args = {
 }
 
 dag = DAG(
-    'olympic_medals_processing_v2',
+    'olympic_medals_processing_v2_success',
     default_args=default_args,
-    description='Process Olympic medals data with branching logic (Airflow 2.x)',
+    description='Process Olympic medals data with branching logic (Success Test)',
     schedule_interval=timedelta(hours=1),
     catchup=False,
-    tags=['olympic', 'medals', 'mysql', 'v2']
+    tags=['olympic', 'medals', 'mysql', 'v2', 'success-test']
 )
 
 # Завдання 1: Створення таблиці

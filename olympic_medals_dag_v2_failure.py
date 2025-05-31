@@ -20,12 +20,12 @@ default_args = {
 }
 
 dag = DAG(
-    'olympic_medals_processing_v2',
+    'olympic_medals_processing_v2_failure',
     default_args=default_args,
-    description='Process Olympic medals data with branching logic (Airflow 2.x)',
+    description='Process Olympic medals data with branching logic (Failure Test)',
     schedule_interval=timedelta(hours=1),
     catchup=False,
-    tags=['olympic', 'medals', 'mysql', 'v2']
+    tags=['olympic', 'medals', 'mysql', 'v2', 'failure-test']
 )
 
 # Завдання 1: Створення таблиці
@@ -108,7 +108,7 @@ count_gold = MySqlOperator(
 # Завдання 5: Затримка виконання
 def create_delay(**context):
     """Створює затримку для тестування сенсора"""
-    delay_seconds = 25  # 25 секунд для успішного тесту, змініть на 35 для тесту провалу
+    delay_seconds = 35  # 35 секунд для тесту провалу сенсора
     print(f"Starting delay for {delay_seconds} seconds...")
     time.sleep(delay_seconds)
     print("Delay completed!")

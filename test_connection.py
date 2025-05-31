@@ -20,38 +20,36 @@ def test_connection():
         
         cursor = connection.cursor()
         
-        print("✅ Підключення успішне!")
-          # Перевірка існування таблиці lina_aggregated_athlete_stats
+        print("✅ Підключення успішне!")        # Перевірка існування таблиці aggregated_athlete_results
         cursor.execute("""
             SELECT COUNT(*) as table_exists 
             FROM information_schema.tables 
-            WHERE table_schema = 'neo_data' 
-            AND table_name = 'lina_aggregated_athlete_stats'
+            WHERE table_schema = 'olympic_dataset' 
+            AND table_name = 'aggregated_athlete_results'
         """)
         
         exists = cursor.fetchone()[0]
         if exists:
-            print("✅ Таблиця lina_aggregated_athlete_stats існує")
+            print("✅ Таблиця aggregated_athlete_results існує")
             
             # Підрахунок медалей для тестування
             medal_counts = {}
             for medal in ['Bronze', 'Silver', 'Gold']:
                 cursor.execute(f"""
                     SELECT COUNT(*) 
-                    FROM lina_aggregated_athlete_stats 
+                    FROM aggregated_athlete_results 
                     WHERE medal = '{medal}'
                 """)
                 count = cursor.fetchone()[0]
                 medal_counts[medal] = count
                 print(f"  {medal}: {count} записів")
         else:
-            print("❌ Таблиця lina_aggregated_athlete_stats не знайдена")
+            print("❌ Таблиця aggregated_athlete_results не знайдена")
         
-        # Перевірка існування таблиці medal_counts
-        cursor.execute("""
+        # Перевірка існування таблиці medal_counts        cursor.execute("""
             SELECT COUNT(*) as table_exists 
             FROM information_schema.tables 
-            WHERE table_schema = 'neo_data' 
+            WHERE table_schema = 'olympic_dataset' 
             AND table_name = 'IllyaF_medal_counts'
         """)
         

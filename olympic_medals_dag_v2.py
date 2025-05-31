@@ -28,12 +28,12 @@ dag = DAG(
     tags=['olympic', 'medals', 'mysql', 'v2']
 )
 
-# Завдання 1: Створення таблиці
+# Завдання 1: Створення таблиці для зберігання результатів
 create_table = MySqlOperator(
     task_id='create_medals_table',
     mysql_conn_id='mysql_default',
     sql="""
-    CREATE TABLE IF NOT EXISTS Illya_F_medal_counts (
+    CREATE TABLE IF NOT EXISTS IllyaF_medal_counts (
         id INT AUTO_INCREMENT PRIMARY KEY,
         medal_type VARCHAR(10),
         count INT,
@@ -67,15 +67,16 @@ random_medal_choice = BranchPythonOperator(
     dag=dag
 )
 
-# Завдання 3-4: Три завдання для підрахунку медалей
+# Завдання 3-5: Підрахунок медалей (виконується одне з трьох завдань залежно від випадкового вибору)
 
 # Підрахунок Bronze медалей
 count_bronze = MySqlOperator(
     task_id='count_bronze_medals',
-    mysql_conn_id='mysql_default',    sql="""
+    mysql_conn_id='mysql_default',
+    sql="""
     INSERT INTO IllyaF_medal_counts (medal_type, count, created_at)
     SELECT 'Bronze', COUNT(*), NOW()
-    FROM lina_aggregated_athlete_stats
+    FROM aggregated_athlete_results
     WHERE medal = 'Bronze';
     """,
     dag=dag
@@ -84,10 +85,11 @@ count_bronze = MySqlOperator(
 # Підрахунок Silver медалей
 count_silver = MySqlOperator(
     task_id='count_silver_medals',
-    mysql_conn_id='mysql_default',    sql="""
+    mysql_conn_id='mysql_default',
+    sql="""
     INSERT INTO IllyaF_medal_counts (medal_type, count, created_at)
     SELECT 'Silver', COUNT(*), NOW()
-    FROM lina_aggregated_athlete_stats
+    FROM aggregated_athlete_results
     WHERE medal = 'Silver';
     """,
     dag=dag
@@ -96,19 +98,26 @@ count_silver = MySqlOperator(
 # Підрахунок Gold медалей
 count_gold = MySqlOperator(
     task_id='count_gold_medals',
-    mysql_conn_id='mysql_default',    sql="""
+    mysql_conn_id='mysql_default',
+    sql="""
     INSERT INTO IllyaF_medal_counts (medal_type, count, created_at)
     SELECT 'Gold', COUNT(*), NOW()
-    FROM lina_aggregated_athlete_stats
+    FROM aggregated_athlete_results
     WHERE medal = 'Gold';
     """,
     dag=dag
 )
 
-# Завдання 5: Затримка виконання
+# Завдання 5: Затримка виконання для тестування сенсора
 def create_delay(**context):
-    """Створює затримку для тестування сенсора"""
-    delay_seconds = 25  # 25 секунд для успішного тесту, змініть на 35 для тесту провалу
+    """
+    Створює затримку для тестування сенсора
+    
+    Змініть delay_seconds для тестування різних сценаріїв:
+    - 25 секунд: успішний тест (менше 30 секунд)
+    - 35 секунд: тест провалу (більше 30 секунд)
+    """
+    delay_seconds = 25  # Змініть на 35 для тестування провалу
     print(f"Starting delay for {delay_seconds} seconds...")
     time.sleep(delay_seconds)
     print("Delay completed!")
@@ -133,8 +142,7 @@ check_recent_record = MySqlSensor(
     """,
     poke_interval=10,  # Перевіряємо кожні 10 секунд
     timeout=60,        # Таймаут 60 секунд
-    mode='poke',
-    dag=dag
+    mode='poke',    dag=dag
 )
 
 # Альтернативний сенсор з кастомною логікою

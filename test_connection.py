@@ -31,8 +31,7 @@ def test_connection():
         exists = cursor.fetchone()[0]
         if exists:
             print("✅ Таблиця aggregated_athlete_results існує")
-            
-            # Підрахунок медалей для тестування
+              # Підрахунок медалей для тестування
             medal_counts = {}
             for medal in ['Bronze', 'Silver', 'Gold']:
                 cursor.execute(f"""
@@ -46,7 +45,8 @@ def test_connection():
         else:
             print("❌ Таблиця aggregated_athlete_results не знайдена")
         
-        # Перевірка існування таблиці medal_counts        cursor.execute("""
+        # Перевірка існування таблиці medal_counts
+        cursor.execute("""
             SELECT COUNT(*) as table_exists 
             FROM information_schema.tables 
             WHERE table_schema = 'olympic_dataset' 

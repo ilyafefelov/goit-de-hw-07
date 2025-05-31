@@ -1,6 +1,6 @@
 # Звіт про виконання домашнього завдання Apache Airflow
 
-**Студент**: Kostya M.  
+**Студент**: Illya M.  
 **Курс**: GoIT Data Engineering  
 **Домашнє завдання**: №07 - Apache Airflow  
 **Дата виконання**: [дата]
@@ -16,7 +16,7 @@ DAG `olympic_medals_processing_v2` містить наступні завдан�
 ### 1. Створення таблиці ✅
 - **Task ID**: `create_medals_table`
 - **Оператор**: `MySqlOperator`
-- **Функція**: Створює таблицю `KostyaM_medal_counts` з полями:
+- **Функція**: Створює таблицю `IllyaF_medal_counts` з полями:
   - `id` (INT AUTO_INCREMENT PRIMARY KEY)
   - `medal_type` (VARCHAR(10))
   - `count` (INT)
@@ -59,7 +59,7 @@ DAG `olympic_medals_processing_v2` містить наступні завдан�
 - **Функція**: Перевіряє, що останній запис у таблиці не старший за 30 секунд
 - **SQL**: 
   ```sql
-  SELECT created_at FROM KostyaM_medal_counts 
+  SELECT created_at FROM IllyaF_medal_counts 
   ORDER BY created_at DESC LIMIT 1
   ```
 
@@ -103,7 +103,7 @@ Gold       | 495   | [timestamp]
 ### Конфігурація DAG
 ```python
 default_args = {
-    'owner': 'kostya_m',
+    'owner': 'Illya_m',
     'depends_on_past': False,
     'start_date': datetime(2024, 12, 1),
     'email_on_failure': False,
@@ -140,7 +140,7 @@ create_table → random_medal_choice → [count_bronze | count_silver | count_go
 ```python
 def check_recent_record_custom(**context):
     hook = MySqlHook(mysql_conn_id='mysql_default')
-    sql = "SELECT created_at FROM KostyaM_medal_counts ORDER BY created_at DESC LIMIT 1;"
+    sql = "SELECT created_at FROM IllyaF_medal_counts ORDER BY created_at DESC LIMIT 1;"
     result = hook.get_first(sql)
     
     if result and result[0]:

@@ -12,7 +12,7 @@ goit-de-hw-07/
 ├── mysql_connector.py              # Скрипт для підключення до MySQL
 ├── requirements.txt                # Python залежності
 ├── .env                           # Конфігурація бази даних
-├── KostyaM_athlete_enriched_avg_data.csv  # Приклад даних
+├── IllyaF_athlete_enriched_avg_data.csv  # Приклад даних
 └── README.md                      # Цей файл
 ```
 
@@ -21,7 +21,7 @@ goit-de-hw-07/
 DAG `olympic_medals_processing_v2` виконує наступні завдання:
 
 1. **Створення таблиці** (`create_medals_table`)
-   - Створює таблицю `KostyaM_medal_counts` з полями: id, medal_type, count, created_at
+   - Створює таблицю `IllyaF_medal_counts` з полями: id, medal_type, count, created_at
 
 2. **Випадковий вибір медалі** (`random_medal_choice`)
    - Використовує `BranchPythonOperator` для випадкового вибору Bronze/Silver/Gold
@@ -82,7 +82,7 @@ time.sleep(35)  # Сенсор завершиться з тайм-аутом
 ## Очікувані результати
 
 1. **Граф DAG** показує правильні залежності та розгалуження
-2. **Таблиця `KostyaM_medal_counts`** створюється з правильною структурою
+2. **Таблиця `IllyaF_medal_counts`** створюється з правильною структурою
 3. **Один з трьох шляхів** виконується залежно від випадкового вибору
 4. **Дані вставляються** у таблицю з правильним типом медалі та кількістю
 5. **Сенсор успішно спрацьовує** при 25-секундній затримці

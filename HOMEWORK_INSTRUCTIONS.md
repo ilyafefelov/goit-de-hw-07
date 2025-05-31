@@ -77,7 +77,7 @@
 1. **Граф DAG** - покажіть структуру завдань та їх залежності
 2. **Успішне виконання** - всі завдання зелені (25 сек затримка)
 3. **Невдача сенсора** - сенсор червоний (35 сек затримка)
-4. **Дані в таблиці** - показати записи в таблиці `KostyaM_medal_counts`
+4. **Дані в таблиці** - показати записи в таблиці `IllyaF_medal_counts`
 
 ### 6. Перевірка даних в таблиці
 
@@ -85,7 +85,7 @@
 
 ```sql
 SELECT id, medal_type, count, created_at 
-FROM KostyaM_medal_counts 
+FROM IllyaF_medal_counts 
 ORDER BY created_at DESC 
 LIMIT 10;
 ```

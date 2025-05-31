@@ -71,7 +71,7 @@ Port: 3306
 
 ```sql
 SELECT id, medal_type, count, created_at 
-FROM KostyaM_medal_counts 
+FROM IllyaF_medal_counts 
 ORDER BY created_at DESC 
 LIMIT 10;
 ```

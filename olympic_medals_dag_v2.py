@@ -10,7 +10,7 @@ from airflow.utils.trigger_rule import TriggerRule
 
 # Конфігурація DAG
 default_args = {
-    'owner': 'kostya_m',
+    'owner': 'Illya_m',
     'depends_on_past': False,
     'start_date': datetime(2024, 12, 1),
     'email_on_failure': False,
@@ -33,7 +33,7 @@ create_table = MySqlOperator(
     task_id='create_medals_table',
     mysql_conn_id='mysql_default',
     sql="""
-    CREATE TABLE IF NOT EXISTS KostyaM_medal_counts (
+    CREATE TABLE IF NOT EXISTS Illya_F_medal_counts (
         id INT AUTO_INCREMENT PRIMARY KEY,
         medal_type VARCHAR(10),
         count INT,
@@ -73,7 +73,7 @@ random_medal_choice = BranchPythonOperator(
 count_bronze = MySqlOperator(
     task_id='count_bronze_medals',
     mysql_conn_id='mysql_default',    sql="""
-    INSERT INTO KostyaM_medal_counts (medal_type, count, created_at)
+    INSERT INTO IllyaF_medal_counts (medal_type, count, created_at)
     SELECT 'Bronze', COUNT(*), NOW()
     FROM lina_aggregated_athlete_stats
     WHERE medal = 'Bronze';
@@ -85,7 +85,7 @@ count_bronze = MySqlOperator(
 count_silver = MySqlOperator(
     task_id='count_silver_medals',
     mysql_conn_id='mysql_default',    sql="""
-    INSERT INTO KostyaM_medal_counts (medal_type, count, created_at)
+    INSERT INTO IllyaF_medal_counts (medal_type, count, created_at)
     SELECT 'Silver', COUNT(*), NOW()
     FROM lina_aggregated_athlete_stats
     WHERE medal = 'Silver';
@@ -97,7 +97,7 @@ count_silver = MySqlOperator(
 count_gold = MySqlOperator(
     task_id='count_gold_medals',
     mysql_conn_id='mysql_default',    sql="""
-    INSERT INTO KostyaM_medal_counts (medal_type, count, created_at)
+    INSERT INTO IllyaF_medal_counts (medal_type, count, created_at)
     SELECT 'Gold', COUNT(*), NOW()
     FROM lina_aggregated_athlete_stats
     WHERE medal = 'Gold';
@@ -126,7 +126,7 @@ check_recent_record = MySqlSensor(
     mysql_conn_id='mysql_default',
     sql="""
     SELECT COUNT(*)
-    FROM KostyaM_medal_counts
+    FROM IllyaF_medal_counts
     WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 SECOND)
     ORDER BY created_at DESC
     LIMIT 1;
@@ -144,7 +144,7 @@ def check_recent_record_custom(**context):
     
     sql = """
     SELECT created_at
-    FROM KostyaM_medal_counts
+    FROM IllyaF_medal_counts
     ORDER BY created_at DESC
     LIMIT 1;
     """

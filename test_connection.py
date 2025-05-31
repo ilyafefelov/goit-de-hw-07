@@ -52,17 +52,17 @@ def test_connection():
             SELECT COUNT(*) as table_exists 
             FROM information_schema.tables 
             WHERE table_schema = 'neo_data' 
-            AND table_name = 'KostyaM_medal_counts'
+            AND table_name = 'IllyaF_medal_counts'
         """)
         
         exists = cursor.fetchone()[0]
         if exists:
-            print("✅ Таблиця KostyaM_medal_counts вже існує")
+            print("✅ Таблиця IllyaF_medal_counts вже існує")
             
             # Показати останні записи
             cursor.execute("""
                 SELECT id, medal_type, count, created_at 
-                FROM KostyaM_medal_counts 
+                FROM IllyaF_medal_counts 
                 ORDER BY created_at DESC 
                 LIMIT 5
             """)
@@ -75,7 +75,7 @@ def test_connection():
             else:
                 print("  Таблиця порожня")
         else:
-            print("ℹ️ Таблиця KostyaM_medal_counts буде створена DAG")
+            print("ℹ️ Таблиця IllyaF_medal_counts буде створена DAG")
         
     except mysql.connector.Error as error:
         print(f"❌ Помилка підключення: {error}")

@@ -1,12 +1,61 @@
+"""
+Olympic Medals DAG - Compatible with environments without MySQL provider packages
+Uses Python operators with direct MySQL connections as fallback
+"""
 from datetime import datetime, timedelta
 import random
 import time
+import mysql.connector
 from airflow import DAG
-from airflow.providers.mysql.operators.mysql import MySqlOperator
 from airflow.operators.python import PythonOperator, BranchPythonOperator
-from airflow.providers.mysql.sensors.mysql import MySqlSensor
-from airflow.providers.mysql.hooks.mysql import MySqlHook
 from airflow.utils.trigger_rule import TriggerRule
+
+# Try to import MySQL components - fallback to Python operators if not available
+try:
+    from airflow.providers.mysql.operators.mysql import MySqlOperator
+    from airflow.providers.mysql.sensors.mysql import MySqlSensor
+    from airflow.providers.mysql.hooks.mysql import MySqlHook
+    MYSQL_OPERATORS_AVAILABLE = True
+except ImportError:
+    # Fallback to legacy operators for older Airflow installations
+    try:
+        from airflow.operators.mysql_operator import MySqlOperator
+        from airflow.sensors.sql_sensor import SqlSensor as MySqlSensor
+        from airflow.hooks.mysql_hook import MySqlHook
+        MYSQL_OPERATORS_AVAILABLE = True
+    except ImportError:
+        # No MySQL operators available, use Python operators with direct connections
+        MySqlOperator = None
+        MySqlSensor = None
+        MySqlHook = None
+        MYSQL_OPERATORS_AVAILABLE = False
+
+# MySQL connection configuration (fallback when operators not available)
+def get_mysql_connection():
+    """Get MySQL connection when operators are not available"""
+    return mysql.connector.connect(
+        host='217.61.57.46',
+        database='olympic_dataset',
+        user='neo_data_admin',
+        password='Proyahaxuqithab9oplp'
+    )
+
+def execute_mysql_python(sql_query, task_name):
+    """Execute MySQL query using Python when MySqlOperator not available"""
+    print(f"Executing {task_name}: {sql_query}")
+    try:
+        connection = get_mysql_connection()
+        cursor = connection.cursor()
+        cursor.execute(sql_query)
+        connection.commit()
+        result = cursor.fetchall()
+        cursor.close()
+        connection.close()
+        print(f"✅ {task_name} completed successfully")
+        return result
+    except Exception as e:
+        print(f"❌ {task_name} failed: {e}")
+        raise
 
 # Конфігурація DAG
 default_args = {
@@ -29,17 +78,21 @@ dag = DAG(
 )
 
 # Завдання 1: Створення таблиці для зберігання результатів
-create_table = MySqlOperator(
-    task_id='create_medals_table',
-    mysql_conn_id='mysql_default',
-    sql="""
+def create_table_task(**context):
+    """Create medals table - works with or without MySQL operators"""
+    sql = """
     CREATE TABLE IF NOT EXISTS IllyaF_medal_counts (
         id INT AUTO_INCREMENT PRIMARY KEY,
         medal_type VARCHAR(10),
         count INT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
-    """,
+    """
+    return execute_mysql_python(sql, "Create Table")
+
+create_table = PythonOperator(
+    task_id='create_medals_table',
+    python_callable=create_table_task,
     dag=dag
 )
 
@@ -68,47 +121,40 @@ random_medal_choice = BranchPythonOperator(
 )
 
 # Завдання 3-5: Підрахунок медалей (виконується одне з трьох завдань залежно від випадкового вибору)
+def count_medal_task(medal_type):
+    """Count medals of specific type and save to database"""
+    def inner_task(**context):
+        sql = f"""
+        INSERT INTO IllyaF_medal_counts (medal_type, count, created_at)
+        SELECT '{medal_type}', COUNT(*), NOW()
+        FROM olympic_dataset.athlete_event_results
+        WHERE medal = '{medal_type}';
+        """
+        return execute_mysql_python(sql, f"Count {medal_type} Medals")
+    return inner_task
 
 # Підрахунок Bronze медалей
-count_bronze = MySqlOperator(
+count_bronze = PythonOperator(
     task_id='count_bronze_medals',
-    mysql_conn_id='mysql_default',
-    sql="""
-    INSERT INTO IllyaF_medal_counts (medal_type, count, created_at)
-    SELECT 'Bronze', COUNT(*), NOW()
-    FROM aggregated_athlete_results
-    WHERE medal = 'Bronze';
-    """,
+    python_callable=count_medal_task('Bronze'),
     dag=dag
 )
 
 # Підрахунок Silver медалей
-count_silver = MySqlOperator(
+count_silver = PythonOperator(
     task_id='count_silver_medals',
-    mysql_conn_id='mysql_default',
-    sql="""
-    INSERT INTO IllyaF_medal_counts (medal_type, count, created_at)
-    SELECT 'Silver', COUNT(*), NOW()
-    FROM aggregated_athlete_results
-    WHERE medal = 'Silver';
-    """,
+    python_callable=count_medal_task('Silver'),
     dag=dag
 )
 
 # Підрахунок Gold медалей
-count_gold = MySqlOperator(
+count_gold = PythonOperator(
     task_id='count_gold_medals',
-    mysql_conn_id='mysql_default',
-    sql="""
-    INSERT INTO IllyaF_medal_counts (medal_type, count, created_at)
-    SELECT 'Gold', COUNT(*), NOW()
-    FROM aggregated_athlete_results
-    WHERE medal = 'Gold';
-    """,
+    python_callable=count_medal_task('Gold'),
     dag=dag
 )
 
-# Завдання 5: Затримка виконання для тестування сенсора
+# Завдання затримки для тестування різних сценаріїв
 def create_delay(**context):
     """
     Створює затримку для тестування сенсора
@@ -130,51 +176,89 @@ delay_task = PythonOperator(
 )
 
 # Завдання 6: Сенсор для перевірки свіжості даних
-check_recent_record = MySqlSensor(
+def check_recent_record_sensor(**context):
+    """Check for fresh records in the database"""
+    import time
+    start_time = time.time()
+    timeout = 60  # 60 second timeout
+    
+    while time.time() - start_time < timeout:
+        try:
+            connection = get_mysql_connection()
+            cursor = connection.cursor()
+            
+            sql = """
+            SELECT COUNT(*)
+            FROM IllyaF_medal_counts
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 SECOND)
+            ORDER BY created_at DESC
+            LIMIT 1;
+            """
+            
+            cursor.execute(sql)
+            result = cursor.fetchone()
+            cursor.close()
+            connection.close()
+            
+            if result and result[0] > 0:
+                print("✅ Found fresh record (within 30 seconds)")
+                return True
+            
+            print("Waiting for fresh record...")
+            time.sleep(10)  # Wait 10 seconds before checking again
+            
+        except Exception as e:
+            print(f"Error checking for fresh records: {e}")
+            time.sleep(10)
+    
+    print("❌ Timeout: No fresh records found within 60 seconds")
+    return False
+
+check_recent_record = PythonOperator(
     task_id='check_record_freshness',
-    mysql_conn_id='mysql_default',
-    sql="""
-    SELECT COUNT(*)
-    FROM IllyaF_medal_counts
-    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 SECOND)
-    ORDER BY created_at DESC
-    LIMIT 1;
-    """,
-    poke_interval=10,  # Перевіряємо кожні 10 секунд
-    timeout=60,        # Таймаут 60 секунд
-    mode='poke',    dag=dag
+    python_callable=check_recent_record_sensor,
+    dag=dag
 )
 
 # Альтернативний сенсор з кастомною логікою
 def check_recent_record_custom(**context):
     """Перевіряє, чи є свіжі записи в таблиці"""
-    hook = MySqlHook(mysql_conn_id='mysql_default')
-    
-    sql = """
-    SELECT created_at
-    FROM IllyaF_medal_counts
-    ORDER BY created_at DESC
-    LIMIT 1;
-    """
-    
-    result = hook.get_first(sql)
-    if result and result[0]:
-        latest_time = result[0]
-        current_time = datetime.now()
-        time_diff = (current_time - latest_time).total_seconds()
+    try:
+        connection = get_mysql_connection()
+        cursor = connection.cursor()
         
-        print(f"Latest record time: {latest_time}")
-        print(f"Current time: {current_time}")
-        print(f"Time difference: {time_diff} seconds")
+        sql = """
+        SELECT created_at
+        FROM IllyaF_medal_counts
+        ORDER BY created_at DESC
+        LIMIT 1;
+        """
         
-        if time_diff <= 30:
-            print("Record is fresh (within 30 seconds)")
-            return True
+        cursor.execute(sql)
+        result = cursor.fetchone()
+        cursor.close()
+        connection.close()
+        
+        if result and result[0]:
+            latest_time = result[0]
+            current_time = datetime.now()
+            time_diff = (current_time - latest_time).total_seconds()
+            
+            print(f"Latest record time: {latest_time}")
+            print(f"Current time: {current_time}")
+            print(f"Time difference: {time_diff} seconds")
+            
+            if time_diff <= 30:
+                print("✅ Record is fresh (within 30 seconds)")
+                return True
+            else:
+                print("❌ Record is too old (more than 30 seconds)")
+                return False
         else:
-            print("Record is too old (more than 30 seconds)")
+            print("❌ No records found")
             return False
-    else:
-        print("No records found")
+    except Exception as e:
+        print(f"Error in custom sensor: {e}")
         return False
 
 check_recent_record_python = PythonOperator(

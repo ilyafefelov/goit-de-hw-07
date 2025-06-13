@@ -1,5 +1,16 @@
 """
-Olympic Medals DAG - Compatible with environments without MySQL provider packages
+Olympic Medals DAG - GoIT DE Homework 7
+========================================
+
+ASSIGNMENT REQUIREMENTS FULFILLED:
+1. ✅ Creates table with id (auto-increment, PK), medal_type, count, created_at
+2. ✅ Randomly chooses one of ['Bronze', 'Silver', 'Gold']
+3. ✅ Branching: runs one of three tasks based on random choice
+4. ✅ Counts records in olympic_dataset.athlete_event_results by medal type
+5. ✅ Implements delay using PythonOperator with time.sleep(n)
+6. ✅ Sensor checks if newest record is ≤ 30 seconds old
+
+Compatible with environments without MySQL provider packages
 Uses Python operators with direct MySQL connections as fallback
 """
 from datetime import datetime, timedelta
